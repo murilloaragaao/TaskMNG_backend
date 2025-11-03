@@ -31,3 +31,6 @@ build/
 
 ### VS Code ###
 .vscode/
+
+TaskMNG/src/main/resources/application.properties
+

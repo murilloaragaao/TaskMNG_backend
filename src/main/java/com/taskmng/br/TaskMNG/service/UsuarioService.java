@@ -54,9 +54,12 @@ public class UsuarioService {
         return usuarioRepository.save(novoUsuario);
     }
 
-    // trazendo todos os usuarios
+    // trazendo todos os usuarios(ativos)
     public List<Usuario> exibirUsuarios(){
-        return usuarioRepository.findAll();
+        return usuarioRepository.findAll()
+                .stream()
+                .filter(u -> u.getAtivo() == 1)
+                .toList();
     }
 
     // trazendo o usuario pelo id
@@ -91,5 +94,25 @@ public class UsuarioService {
         // regex 8–14 chars, pelo menos 1 maiúscula, 1 minúscula, 1 número e 1 caractere especial
         String regex = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,14}$";
         return senha.matches(regex);
+    }
+
+    //exclusao lógica do usuário
+    public void deletarUsuario(Long id, Usuario usuarioExclusao){
+        if(usuarioExclusao.getTipoPerfil() != Perfil.ADMINISTRADOR){
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+                    "apenas admnistradores podem excluir usuários.");
+        }
+
+        Usuario usuario = usuarioRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+                "usuário não encontrado para exclusão"));
+
+        if (usuario.getAtivo() == 0) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "usuário já está inativo.");
+        }
+
+        usuario.setAtivo(0);
+        usuarioRepository.save(usuario);
     }
 }

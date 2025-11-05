@@ -40,13 +40,14 @@ public class Usuario {
     private String email;
 
     @NotNull
+    @NotBlank
     private String senha;
 
     @NotNull
     private Integer ativo;
 
+    @NotNull
     @Enumerated(EnumType.STRING)
     @Column(name = "tipo_perfil", nullable = false)
     private Perfil tipoPerfil;
-
 }

@@ -24,12 +24,11 @@ public class UsuarioService {
     private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
     public Usuario cadastrarUsuario(Usuario novoUsuario, Perfil perfilCriador) {
-
         if(perfilCriador != Perfil.ADMINISTRADOR && perfilCriador != Perfil.TECHLEAD){
             throw new ResponseStatusException(HttpStatus.FORBIDDEN,
                     "apenas administradores ou techleads podem cadastrar usuários");
 
-        }
+       }
 
         if (usuarioRepository.existsByEmail(novoUsuario.getEmail())) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "email já cadastrado.");
@@ -130,5 +129,10 @@ public class UsuarioService {
                     "senha incorreta.");
         }
         return true;
+    }
+
+    public Usuario buscarPorEmail(String email) {
+        return usuarioRepository.findByEmail(email)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "usuário não encontrado"));
     }
 }

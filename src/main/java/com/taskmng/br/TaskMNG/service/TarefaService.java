@@ -65,4 +65,42 @@ public class TarefaService {
                 tarefa.getStatus()
         );
     }
+
+    public Tarefa atualizarTarefa(Long id, Tarefa tarefaAtualizada, Usuario usuarioEditor) {
+        if (usuarioEditor == null)
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "usuário não autenticado.");
+
+        if (usuarioEditor.getTipoPerfil() != Perfil.TECHLEAD)
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "apenas TECHLEAD pode atualizar tarefas.");
+
+        Tarefa existente = tarefaRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "tarefa não encontrada."));
+
+        existente.setNomeTarefa(tarefaAtualizada.getNomeTarefa());
+        existente.setDescricao(tarefaAtualizada.getDescricao());
+        existente.setDataEntrega(tarefaAtualizada.getDataEntrega());
+        existente.setPrioridade(tarefaAtualizada.getPrioridade());
+        existente.setStatus(tarefaAtualizada.getStatus());
+
+        return tarefaRepository.save(existente);
+    }
+
+    public Tarefa entregarTarefa(Long id, Usuario colaborador) {
+        if (colaborador == null)
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "usuário não autenticado.");
+
+        if (colaborador.getTipoPerfil() != Perfil.COLABORADOR)
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "apenas colaboradores podem entregar tarefas.");
+
+        Tarefa tarefa = tarefaRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "tarefa não encontrada."));
+
+        tarefa.setStatus(Status.ENTREGUE);
+        tarefa.setDataEntrega(new Date());
+
+        return tarefaRepository.save(tarefa);
+    }
+
+
+
 }

@@ -1,5 +1,6 @@
 package com.taskmng.br.TaskMNG.service;
 
+import com.taskmng.br.TaskMNG.dto.TarefaDTO;
 import com.taskmng.br.TaskMNG.entities.Tarefa;
 import com.taskmng.br.TaskMNG.entities.Usuario;
 import com.taskmng.br.TaskMNG.enums.Perfil;
@@ -11,6 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.Date;
+import java.util.List;
 
 @Service
 public class TarefaService {
@@ -35,5 +37,32 @@ public class TarefaService {
         return tarefaRepository.save(novaTarefa);
     }
 
+    public List<TarefaDTO> listarTarefas() {
+        return tarefaRepository.findAll()
+                .stream()
+                .filter(t -> t.getAtivo() == 1)
+                .map(t -> new TarefaDTO(
+                        t.getNomeTarefa(),
+                        t.getDescricao(),
+                        t.getDataCriacao(),
+                        t.getDataEntrega(),
+                        t.getPrioridade(),
+                        t.getStatus()
+                ))
+                .toList();
+    }
 
+    public TarefaDTO buscarPorId(Long id) {
+        Tarefa tarefa = tarefaRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "tarefa não encontrada."));
+
+        return new TarefaDTO(
+                tarefa.getNomeTarefa(),
+                tarefa.getDescricao(),
+                tarefa.getDataCriacao(),
+                tarefa.getDataEntrega(),
+                tarefa.getPrioridade(),
+                tarefa.getStatus()
+        );
+    }
 }

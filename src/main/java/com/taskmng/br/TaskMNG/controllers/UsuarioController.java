@@ -47,12 +47,12 @@ public class UsuarioController {
     }
 
     @DeleteMapping("/excluir/{id}")
-    public ResponseEntity<Void> deletarUsuario(@PathVariable Long id, @RequestBody Usuario usuarioExclusao, HttpServletRequest request){
+    public ResponseEntity<Void> deletarUsuario(@PathVariable Long id, HttpServletRequest request) {
         Usuario usuarioLogado = (Usuario) request.getSession().getAttribute("usuarioLogado");
         if (usuarioLogado == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
-        usuarioService.deletarUsuario(id, usuarioExclusao);
+        usuarioService.deletarUsuario(id, usuarioLogado);
         return ResponseEntity.noContent().build();
     }
 

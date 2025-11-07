@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
@@ -19,11 +20,10 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class UsuarioService {
 
-    @Autowired
-    private UsuarioRepository usuarioRepository;
+    private final UsuarioRepository usuarioRepository;
+    private final BCryptPasswordEncoder passwordEncoder;
 
-    private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
-
+    @Transactional
     public Usuario cadastrarUsuario(Usuario novoUsuario, Perfil perfilCriador) {
         if(perfilCriador != Perfil.ADMINISTRADOR && perfilCriador != Perfil.TECHLEAD){
             throw new ResponseStatusException(HttpStatus.FORBIDDEN,
@@ -48,7 +48,7 @@ public class UsuarioService {
         }
 
         //passando criptografia na senha para armazenar no banco
-        String senhaHash = new BCryptPasswordEncoder().encode(novoUsuario.getSenha());
+        String senhaHash = passwordEncoder.encode(novoUsuario.getSenha());
         novoUsuario.setSenha(senhaHash);
 
         novoUsuario.setAtivo(1);
@@ -76,11 +76,12 @@ public class UsuarioService {
                 "usuário não encontrado"));
     }
 
+    @Transactional
     public Usuario atualizarUsuario(Long id, Usuario usuarioAtualizado){
         //usando optional para verificar se o usuario existe
-        Optional<Usuario> optUsuario = usuarioRepository.findById(id);
-
-        Usuario usuarioExistente = optUsuario.get();
+        Usuario usuarioExistente = usuarioRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+                        "usuário não encontrado para atualização"));
 
         usuarioExistente.setNome(usuarioAtualizado.getNome());
         usuarioExistente.setIdade(usuarioAtualizado.getIdade());
@@ -91,7 +92,7 @@ public class UsuarioService {
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
                         "senha inválida.");
             }
-            String senhaHash = new BCryptPasswordEncoder().encode(usuarioAtualizado.getSenha());
+            String senhaHash = passwordEncoder.encode(usuarioAtualizado.getSenha());
             usuarioExistente.setSenha(senhaHash);
         }
         return usuarioRepository.save(usuarioExistente);
@@ -104,15 +105,16 @@ public class UsuarioService {
     }
 
     //exclusao lógica do usuário
-    public void deletarUsuario(Long id, Usuario usuarioExclusao){
-        if(usuarioExclusao.getTipoPerfil() != Perfil.ADMINISTRADOR){
+    @Transactional
+    public void deletarUsuario(Long id, Usuario usuarioLogado) {
+        if (usuarioLogado.getTipoPerfil() != Perfil.ADMINISTRADOR) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN,
-                    "apenas admnistradores podem excluir usuários.");
+                    "apenas administradores podem excluir usuários.");
         }
 
         Usuario usuario = usuarioRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
-                "usuário não encontrado para exclusão"));
+                        "usuário não encontrado para exclusão"));
 
         if (usuario.getAtivo() == 0) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,

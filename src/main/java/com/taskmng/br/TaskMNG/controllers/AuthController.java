@@ -18,7 +18,6 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/taskmng/auth")
 @RequiredArgsConstructor
-
 public class AuthController {
 
     @Autowired

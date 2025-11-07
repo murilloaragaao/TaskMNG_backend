@@ -22,14 +22,12 @@ public class TarefaController {
     private TarefaService tarefaService;
 
     @PostMapping("/cadastrar")
-    public ResponseEntity<Tarefa> cadastrarTarefa(@RequestBody @Valid Tarefa novaTarefa, HttpServletRequest request) {
+    public ResponseEntity<TarefaDTO> cadastrarTarefa(@RequestBody @Valid Tarefa novaTarefa, HttpServletRequest request) {
         Usuario usuarioCriador = (Usuario) request.getSession().getAttribute("usuarioLogado");
-
-        if (usuarioCriador == null) {
+        if (usuarioCriador == null)
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        }
 
-        Tarefa tarefaCriada = tarefaService.criarTarefa(novaTarefa, usuarioCriador);
+        TarefaDTO tarefaCriada = tarefaService.criarTarefa(novaTarefa, usuarioCriador);
         return ResponseEntity.status(HttpStatus.CREATED).body(tarefaCriada);
     }
 
@@ -44,41 +42,30 @@ public class TarefaController {
     }
 
     @PutMapping("/atualizar/{id}")
-    public ResponseEntity<Tarefa> atualizarTarefa(@PathVariable Long id, @RequestBody @Valid TarefaUpdateDTO tarefaUpdateDTO, HttpServletRequest request) {
+    public ResponseEntity<TarefaDTO> atualizarTarefa(@PathVariable Long id, @RequestBody @Valid TarefaUpdateDTO tarefaUpdateDTO, HttpServletRequest request) {
         Usuario usuarioEditor = (Usuario) request.getSession().getAttribute("usuarioLogado");
-
-        if (usuarioEditor == null) {
+        if (usuarioEditor == null)
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        }
 
-        Tarefa tarefa = tarefaService.atualizarTarefa(id, tarefaUpdateDTO, usuarioEditor);
-        return ResponseEntity.ok(tarefa);
+        TarefaDTO tarefaAtualizada = tarefaService.atualizarTarefa(id, tarefaUpdateDTO, usuarioEditor);
+        return ResponseEntity.ok(tarefaAtualizada);
     }
 
     @PatchMapping("/entregar/{id}")
     public ResponseEntity<TarefaDTO> entregarTarefa(@PathVariable Long id, HttpServletRequest request) {
         Usuario colaborador = (Usuario) request.getSession().getAttribute("usuarioLogado");
-        if(colaborador == null)
+        if (colaborador == null)
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
 
-        Tarefa tarefaEntregue = tarefaService.entregarTarefa(id, colaborador);
-
-        TarefaDTO dto = new TarefaDTO(
-                tarefaEntregue.getNomeTarefa(),
-                tarefaEntregue.getDescricao(),
-                tarefaEntregue.getDataCriacao(),
-                tarefaEntregue.getDataEntrega(),
-                tarefaEntregue.getPrioridade(),
-                tarefaEntregue.getStatus()
-        );
-
-        return ResponseEntity.ok(dto);
+        TarefaDTO tarefaEntregue = tarefaService.entregarTarefa(id, colaborador);
+        return ResponseEntity.ok(tarefaEntregue);
     }
 
     @DeleteMapping("/excluir/{id}")
     public ResponseEntity<Void> deletarTarefa(@PathVariable Long id, HttpServletRequest request) {
         Usuario usuarioLogado = (Usuario) request.getSession().getAttribute("usuarioLogado");
-        if(usuarioLogado == null) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        if (usuarioLogado == null)
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
 
         tarefaService.deletarTarefa(id, usuarioLogado);
         return ResponseEntity.noContent().build();

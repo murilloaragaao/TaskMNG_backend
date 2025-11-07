@@ -53,4 +53,12 @@ public class Tarefa {
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
     private Status status;
+
+    @ManyToOne
+    @JoinColumn(name = "techlead_id", nullable = false)
+    private Usuario techLead;
+
+    @ManyToOne
+    @JoinColumn(name = "colaborador_id", nullable = false)
+    private Usuario colaborador;
 }

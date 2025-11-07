@@ -7,6 +7,7 @@ import com.taskmng.br.TaskMNG.entities.Usuario;
 import com.taskmng.br.TaskMNG.enums.Perfil;
 import com.taskmng.br.TaskMNG.enums.Status;
 import com.taskmng.br.TaskMNG.repository.TarefaRepository;
+import com.taskmng.br.TaskMNG.repository.UsuarioRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -21,36 +22,37 @@ import java.util.List;
 @RequiredArgsConstructor
 public class TarefaService {
     private final TarefaRepository tarefaRepository;
+    private final UsuarioRepository usuarioRepository;
 
-    public Tarefa criarTarefa(Tarefa novaTarefa, Usuario usuarioCriador) {
-        if (usuarioCriador == null) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
-                    "usuário não autenticado.");
-        }
+    @Transactional
+    public TarefaDTO criarTarefa(Tarefa novaTarefa, Usuario techLead) {
+        if (techLead == null)
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "usuário não autenticado.");
 
-        if (usuarioCriador.getTipoPerfil() != Perfil.ADMINISTRADOR && usuarioCriador.getTipoPerfil() != Perfil.TECHLEAD) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN,
-                    "apenas administradores e techleads podem criar tarefas.");
-        }
+        if (techLead.getTipoPerfil() != Perfil.TECHLEAD)
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "apenas TECHLEAD pode criar tarefas.");
+
+        if (novaTarefa.getColaborador() == null || novaTarefa.getColaborador().getIdUsuario() == null)
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "colaborador deve ser informado.");
+
+        Usuario colaborador = usuarioRepository.findById(novaTarefa.getColaborador().getIdUsuario())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "colaborador não encontrado."));
+
         novaTarefa.setAtivo(1);
         novaTarefa.setDataCriacao(new Date());
         novaTarefa.setStatus(Status.PENDENTE);
+        novaTarefa.setTechLead(techLead);
+        novaTarefa.setColaborador(colaborador);
 
-        return tarefaRepository.save(novaTarefa);
+        Tarefa tarefaSalva = tarefaRepository.save(novaTarefa);
+        return new TarefaDTO(tarefaSalva);
     }
 
     public List<TarefaDTO> listarTarefas() {
         return tarefaRepository.findAll()
                 .stream()
                 .filter(t -> t.getAtivo() == 1)
-                .map(t -> new TarefaDTO(
-                        t.getNomeTarefa(),
-                        t.getDescricao(),
-                        t.getDataCriacao(),
-                        t.getDataEntrega(),
-                        t.getPrioridade(),
-                        t.getStatus()
-                ))
+                .map(TarefaDTO::new)
                 .toList();
     }
 
@@ -58,24 +60,19 @@ public class TarefaService {
         Tarefa tarefa = tarefaRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "tarefa não encontrada."));
 
-        return new TarefaDTO(
-                tarefa.getNomeTarefa(),
-                tarefa.getDescricao(),
-                tarefa.getDataCriacao(),
-                tarefa.getDataEntrega(),
-                tarefa.getPrioridade(),
-                tarefa.getStatus()
-        );
+        if (tarefa.getAtivo() == 0)
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "tarefa inativa.");
+
+        return new TarefaDTO(tarefa);
     }
 
     @Transactional
-    public Tarefa atualizarTarefa(Long id, TarefaUpdateDTO dto, Usuario usuarioEditor) {
+    public TarefaDTO atualizarTarefa(Long id, TarefaUpdateDTO dto, Usuario usuarioEditor) {
         Tarefa existente = tarefaRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "tarefa não encontrada"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "tarefa não encontrada."));
 
-        if (usuarioEditor.getTipoPerfil() != Perfil.TECHLEAD) {
+        if (usuarioEditor.getTipoPerfil() != Perfil.TECHLEAD)
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "apenas TECHLEAD pode atualizar tarefas.");
-        }
 
         existente.setNomeTarefa(dto.nomeTarefa());
         existente.setDescricao(dto.descricao());
@@ -83,10 +80,11 @@ public class TarefaService {
         existente.setPrioridade(dto.prioridade());
         existente.setStatus(dto.status());
 
-        return tarefaRepository.save(existente);
+        Tarefa atualizada = tarefaRepository.save(existente);
+        return new TarefaDTO(atualizada);
     }
 
-    public Tarefa entregarTarefa(Long id, Usuario colaborador) {
+    public TarefaDTO entregarTarefa(Long id, Usuario colaborador) {
         if (colaborador == null)
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "usuário não autenticado.");
 
@@ -99,7 +97,8 @@ public class TarefaService {
         tarefa.setStatus(Status.ENTREGUE);
         tarefa.setDataEntrega(new Date());
 
-        return tarefaRepository.save(tarefa);
+        Tarefa entregue = tarefaRepository.save(tarefa);
+        return new TarefaDTO(entregue);
     }
 
     @Transactional
@@ -119,6 +118,4 @@ public class TarefaService {
         tarefa.setAtivo(0);
         tarefaRepository.save(tarefa);
     }
-
-
 }

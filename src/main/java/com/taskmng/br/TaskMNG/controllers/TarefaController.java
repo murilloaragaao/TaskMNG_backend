@@ -1,6 +1,7 @@
 package com.taskmng.br.TaskMNG.controllers;
 
 import com.taskmng.br.TaskMNG.dto.TarefaDTO;
+import com.taskmng.br.TaskMNG.dto.TarefaUpdateDTO;
 import com.taskmng.br.TaskMNG.entities.Tarefa;
 import com.taskmng.br.TaskMNG.entities.Usuario;
 import com.taskmng.br.TaskMNG.service.TarefaService;
@@ -43,16 +44,17 @@ public class TarefaController {
     }
 
     @PutMapping("/atualizar/{id}")
-    public ResponseEntity<Tarefa> atualizarTarefa(@PathVariable Long id, @RequestBody @Valid Tarefa tarefaAtualizada, HttpServletRequest request) {
+    public ResponseEntity<Tarefa> atualizarTarefa(@PathVariable Long id, @RequestBody @Valid TarefaUpdateDTO tarefaUpdateDTO, HttpServletRequest request) {
         Usuario usuarioEditor = (Usuario) request.getSession().getAttribute("usuarioLogado");
 
         if (usuarioEditor == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
 
-        Tarefa tarefa = tarefaService.atualizarTarefa(id, tarefaAtualizada, usuarioEditor);
+        Tarefa tarefa = tarefaService.atualizarTarefa(id, tarefaUpdateDTO, usuarioEditor);
         return ResponseEntity.ok(tarefa);
     }
+
 
 
 }

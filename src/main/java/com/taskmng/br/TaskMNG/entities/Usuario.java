@@ -28,18 +28,16 @@ public class Usuario {
     @Column(name = "id_usuario", nullable = false)
     private Long idUsuario;
 
-    @NotNull
     @NotBlank
     private String nome;
 
     @NotNull
     private Integer idade;
 
-    @NotNull
     @NotBlank
+    @Column(unique = true)
     private String email;
 
-    @NotNull
     @NotBlank
     private String senha;
 

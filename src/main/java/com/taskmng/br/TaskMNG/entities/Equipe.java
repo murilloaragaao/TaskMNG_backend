@@ -25,10 +25,6 @@ public class Equipe {
     private String nomeEquipe;
 
     @ManyToOne
-    @JoinColumn(name = "colaborador_id", nullable = false)
-    private Usuario idColaborador;
-
-    @ManyToOne
     @JoinColumn(name = "projeto_id", nullable = false)
     private Projeto projeto;
 
